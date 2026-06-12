@@ -3,6 +3,15 @@ import threading
 import time
 import urllib.request
 import json
+import ssl
+
+try:
+    _create_unverified_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
+else:
+    ssl._create_default_https_context = _create_unverified_https_context
+
 from database import init_db, insert_snapshots, get_dashboard_data
 import time as time_module
 import threading
