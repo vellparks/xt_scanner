@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ symbol }} - AI Deep Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=12">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .analysis-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        .header-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        .card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            margin: 8px 0 16px 0;
+            display: flex;
+            overflow: hidden;
+        }
+        [data-theme="light"] .progress-bar-container {
+            background: rgba(0,0,0,0.1);
+        }
+        .progress-buy { background-color: #22c55e; }
+        .progress-sell { background-color: #ef4444; }
+        
+        .vol-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="analysis-container">
+        <a href="/" style="color: var(--text-secondary); text-decoration: none; margin-bottom: 20px; display: inline-block;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+        </a>
+        
+        <div id="loading" class="text-center py-5">
+            <i class="fa-solid fa-spinner fa-spin fa-3x text-muted"></i>
+            <h3 class="mt-3 text-muted">AI is analyzing {{ symbol }}...</h3>
+        </div>
+
+        <div id="content" style="display: none;">
+            <div class="header-card">
+                <div>
+                    <h1 style="margin: 0; font-size: 2.5rem;"><i class="fa-brands fa-bitcoin text-muted"></i> {{ symbol }}</h1>
+                    <h2 id="price" style="margin: 10px 0 0 0; color: var(--accent-color); font-size: 2rem;">--</h2>
+                </div>
+                <div id="ai-conclusion" style="max-width: 50%; padding: 20px; border-radius: 12px; background: rgba(0,0,0,0.2);">
+                    <!-- AI Text -->
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <!-- Left: Trade Setups -->
+                <div>
+                    <div class="card mb-4" style="margin-bottom: 24px;">
+                        <h3 style="margin-top: 0; color: var(--accent-color);"><i class="fa-solid fa-crosshairs"></i> Spot Trading Setup</h3>
+                        <div style="margin-bottom: 15px;">
+                            <label style="font-size: 0.85rem; color: var(--text-secondary);">Investment Amount ($)</label>
+                            <input type="number" id="spot-inv" class="calc-input" value="100" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--bg-color); color: var(--text-primary); margin-top: 5px;">
+                        </div>
+                        <div class="setup-row">
+                            <span class="setup-label">Entry Price</span>
+                            <span class="setup-value" id="spot-entry">--</span>
+                        </div>
+                        <div class="setup-row">
+                            <span class="setup-label">Target Prices (TP)</span>
+                            <span class="setup-value text-green" id="spot-tp">--</span>
+                        </div>
+                        <div class="setup-row">
+                            <span class="setup-label">Stop Loss Price</span>
+                            <span class="setup-value text-red" id="spot-sl">--</span>
+                        </div>
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--glass-border);">
+                            <div class="setup-row"><span class="setup-label">Expected Profit</span><strong class="text-green" id="spot-pnl-tp">--</strong></div>
+                            <div class="setup-row"><span class="setup-label">Expected Loss</span><strong class="text-red" id="spot-pnl-sl">--</strong></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="margin-top: 0; color: var(--danger-color);"><i class="fa-solid fa-bolt"></i> Futures Setup</h3>
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.85rem; color: var(--text-secondary);">Margin Mode</label>
+                                <select id="fut-margin" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--bg-color); color: var(--text-primary); margin-top: 5px;">
+                                    <option value="isolated">Isolated</option>
+                                    <option value="cross">Cross</option>
+                                </select>
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.85rem; color: var(--text-secondary);">Leverage (x)</label>
+                                <input type="number" id="fut-lev" class="calc-input" value="10" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--bg-color); color: var(--text-primary); margin-top: 5px;">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.85rem; color: var(--text-secondary);">Margin ($)</label>
+                                <input type="number" id="fut-inv" class="calc-input" value="10" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--bg-color); color: var(--text-primary); margin-top: 5px;">
+                            </div>
+                        </div>
+                        <div class="setup-row">
+                            <span class="setup-label">Entry Price</span>
+                            <span class="setup-value" id="fut-entry">--</span>
+                        </div>
+                        <div class="setup-row">
+                            <span class="setup-label">Target Prices (TP)</span>
+                            <span class="setup-value text-green" id="fut-tp">--</span>
+                        </div>
+                        <div class="setup-row">
+                            <span class="setup-label">Stop Loss Price</span>
+                            <span class="setup-value text-red" id="fut-sl">--</span>
+                        </div>
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--glass-border);">
+                            <div class="setup-row"><span class="setup-label">Expected Profit</span><strong class="text-green" id="fut-pnl-tp">--</strong></div>
+                            <div class="setup-row"><span class="setup-label">Expected Loss</span><strong class="text-red" id="fut-pnl-sl">--</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Volume Breakdown & Walls -->
+                <div>
+                    <div class="card mb-4" style="margin-bottom: 24px;">
+                        <h3 style="margin-top: 0;"><i class="fa-solid fa-chart-column"></i> Volume Breakdown</h3>
+                        <div id="vol-bars"></div>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="margin-top: 0;"><i class="fa-solid fa-layer-group"></i> Order Book (Top 5 Walls)</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: right; font-family: monospace; font-size: 0.9rem;">
+                            <div>
+                                <h4 class="text-green text-center" style="margin: 0 0 10px 0; border-bottom: 1px solid var(--glass-border); padding-bottom: 5px;">Buy Walls (Support)</h4>
+                                <div id="bids-list">--</div>
+                                <div style="margin-top: 10px; border-top: 1px solid var(--glass-border); padding-top: 5px;" class="text-green" id="total-bids">--</div>
+                            </div>
+                            <div>
+                                <h4 class="text-red text-center" style="margin: 0 0 10px 0; border-bottom: 1px solid var(--glass-border); padding-bottom: 5px;">Sell Walls (Resistance)</h4>
+                                <div id="asks-list">--</div>
+                                <div style="margin-top: 10px; border-top: 1px solid var(--glass-border); padding-top: 5px;" class="text-red" id="total-asks">--</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Apply theme from localStorage
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        const formatCurrency = (val) => {
+            if (!val) return '0.00';
+            if (val >= 1000000) return (val / 1000000).toFixed(2) + 'M';
+            if (val >= 1000) return (val / 1000).toFixed(2) + 'K';
+            return val.toFixed(2);
+        };
+
+        const formatPrice = (val) => {
+            if (!val) return '0.00';
+            if (val < 0.0001) return val.toFixed(8);
+            if (val < 0.01) return val.toFixed(6);
+            if (val < 1) return val.toFixed(4);
+            return val.toFixed(2);
+        };
+
+        const renderBar = (label, buy, sell) => {
+            const total = buy + sell;
+            if (total === 0) return '';
+            const buyPct = (buy / total) * 100;
+            const sellPct = (sell / total) * 100;
+            
+            return `
+                <div class="vol-label">
+                    <span>${label} (Buy: $${formatCurrency(buy)})</span>
+                    <span>(Sell: $${formatCurrency(sell)})</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-buy" style="width: ${buyPct}%"></div>
+                    <div class="progress-sell" style="width: ${sellPct}%"></div>
+                </div>
+            `;
+        };
+
+        let latestSetup = null;
+
+        function updateCalculations() {
+            if (!latestSetup) return;
+            const spotInv = parseFloat(document.getElementById('spot-inv').value) || 0;
+            const futInv = parseFloat(document.getElementById('fut-inv').value) || 0;
+            const futLev = parseFloat(document.getElementById('fut-lev').value) || 1;
+            const marginMode = document.getElementById('fut-margin').value;
+            
+            const isUp = latestSetup.direction === 'UP';
+            
+            // Spot Calc
+            const sEntry = latestSetup.spot.entry;
+            const sTps = latestSetup.spot.tps || [latestSetup.spot.tp];
+            const sSl = latestSetup.spot.sl;
+            if (sEntry && sTps.length > 0 && sSl) {
+                const qty = spotInv / sEntry;
+                let tpProfitsHtml = sTps.map((tp, idx) => {
+                    const tpProfit = isUp ? (tp - sEntry) * qty : (sEntry - tp) * qty;
+                    return `TP${idx+1}: +$${tpProfit.toFixed(2)}`;
+                }).join('<br>');
+                const slLoss = isUp ? (sEntry - sSl) * qty : (sSl - sEntry) * qty;
+                document.getElementById('spot-pnl-tp').innerHTML = tpProfitsHtml;
+                document.getElementById('spot-pnl-sl').innerText = `-$${slLoss.toFixed(2)}`;
+            }
+
+            // Futures Calc
+            const fEntry = latestSetup.futures.entry;
+            const fTps = latestSetup.futures.tps || [latestSetup.futures.tp];
+            const fSl = latestSetup.futures.sl;
+            if (fEntry && fTps.length > 0 && fSl) {
+                const positionSize = futInv * futLev;
+                const qty = positionSize / fEntry;
+                
+                let tpProfitsHtml = fTps.map((tp, idx) => {
+                    const tpProfit = isUp ? (tp - fEntry) * qty : (fEntry - tp) * qty;
+                    return `TP${idx+1}: +$${tpProfit.toFixed(2)}`;
+                }).join('<br>');
+                
+                let slLoss = isUp ? (fEntry - fSl) * qty : (fSl - fEntry) * qty;
+                
+                let slText = `-$${slLoss.toFixed(2)}`;
+                if (marginMode === 'isolated' && slLoss >= futInv) {
+                    slText = `-$${futInv.toFixed(2)} (LIQUIDATED)`;
+                    document.getElementById('fut-pnl-sl').className = 'text-red fw-bold';
+                } else {
+                    document.getElementById('fut-pnl-sl').className = 'text-red';
+                }
+                
+                document.getElementById('fut-pnl-tp').innerHTML = tpProfitsHtml;
+                document.getElementById('fut-pnl-sl').innerText = slText;
+            }
+        }
+
+        // Attach listeners to calc inputs
+        document.querySelectorAll('.calc-input, #fut-margin').forEach(el => {
+            el.addEventListener('input', updateCalculations);
+            el.addEventListener('change', updateCalculations);
+        });
+
+        function fetchLiveAnalysis() {
+            fetch(`/api/analysis?symbol={{ url_symbol }}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const setup = data.data;
+                        latestSetup = setup; // Save for calc
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('content').style.display = 'block';
+
+                        document.getElementById('price').innerText = `$${setup.price}`;
+                        
+                        const isUp = setup.direction === 'UP';
+                        const isDown = setup.direction === 'DOWN';
+                        const icon = isUp ? '🚀' : isDown ? '⚠️' : '⚪';
+                        const color = isUp ? '#22c55e' : isDown ? '#ef4444' : '#94a3b8';
+                        
+                        let alertBadge = '';
+                        if (setup.alert === 'BREAKOUT') {
+                            alertBadge = '<div style="background: rgba(168, 85, 247, 0.2); border: 1px solid #a855f7; color: #a855f7; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; font-size: 1.1rem; text-align: center;"><i class="fa-solid fa-rocket"></i> 10x BREAKOUT DETECTED</div>';
+                        } else if (setup.alert === 'PUMP') {
+                            alertBadge = '<div style="background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #22c55e; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; font-size: 1.1rem; text-align: center;">🔥 HIGH BUY VOLUME (PUMP)</div>';
+                        } else if (setup.alert === 'DUMP') {
+                            alertBadge = '<div style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; font-size: 1.1rem; text-align: center;">🩸 HIGH SELL VOLUME (DUMP)</div>';
+                        }
+                        
+                        document.getElementById('ai-conclusion').style.borderLeft = `4px solid ${color}`;
+                        document.getElementById('ai-conclusion').innerHTML = alertBadge + `
+                            <p style="margin:0; font-size: 1.1rem; line-height: 1.6;">
+                                <strong style="color: ${color}; font-size: 1.2rem;">${icon} ${setup.prob}% ${setup.direction}</strong><br>
+                                ${setup.explanation}
+                            </p>
+                        `;
+
+                        // Setups
+                        document.getElementById('spot-entry').innerText = `$${formatPrice(setup.spot.entry) || '-'}`;
+                        if (setup.spot.tps && setup.spot.tps.length > 0) {
+                            document.getElementById('spot-tp').innerHTML = setup.spot.tps.map((t, i) => `TP${i+1}: $${formatPrice(t)}`).join('<br>');
+                        } else {
+                            document.getElementById('spot-tp').innerText = setup.spot.tp ? `$${formatPrice(setup.spot.tp)}` : '-';
+                        }
+                        document.getElementById('spot-sl').innerText = setup.spot.sl ? `$${formatPrice(setup.spot.sl)}` : '-';
+                        
+                        document.getElementById('fut-entry').innerText = `$${formatPrice(setup.futures.entry) || '-'}`;
+                        if (setup.futures.tps && setup.futures.tps.length > 0) {
+                            document.getElementById('fut-tp').innerHTML = setup.futures.tps.map((t, i) => `TP${i+1}: $${formatPrice(t)}`).join('<br>');
+                        } else {
+                            document.getElementById('fut-tp').innerText = setup.futures.tp ? `$${formatPrice(setup.futures.tp)}` : '-';
+                        }
+                        document.getElementById('fut-sl').innerText = setup.futures.sl ? `$${formatPrice(setup.futures.sl)}` : '-';
+
+                        // Volume
+                        const v = setup.volume;
+                        let barsHtml = renderBar('5m Volume', v['5m'].buy, v['5m'].sell);
+                        barsHtml += renderBar('15m Volume', v['15m'].buy, v['15m'].sell);
+                        barsHtml += renderBar('1h Volume', v['1h'].buy, v['1h'].sell);
+                        barsHtml += renderBar('4h Volume', v['4h'].buy, v['4h'].sell);
+                        barsHtml += renderBar('24h Volume', v['24h'].buy, v['24h'].sell);
+                        document.getElementById('vol-bars').innerHTML = barsHtml;
+
+                        // Walls (Top 5)
+                        const w = setup.walls;
+                        let bidsHtml = '';
+                        let asksHtml = '';
+                        let totalBids = 0;
+                        let totalAsks = 0;
+                        
+                        if (w.top_bids && w.top_bids.length > 0) {
+                            w.top_bids.forEach(b => {
+                                bidsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>$${formatPrice(b.price)}</span><span>$${formatCurrency(b.value)}</span></div>`;
+                                totalBids += b.value;
+                            });
+                        } else {
+                            bidsHtml = '<div class="text-center text-muted">No walls found</div>';
+                        }
+                        
+                        if (w.top_asks && w.top_asks.length > 0) {
+                            w.top_asks.forEach(a => {
+                                asksHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>$${formatPrice(a.price)}</span><span>$${formatCurrency(a.value)}</span></div>`;
+                                totalAsks += a.value;
+                            });
+                        } else {
+                            asksHtml = '<div class="text-center text-muted">No walls found</div>';
+                        }
+                        
+                        document.getElementById('bids-list').innerHTML = bidsHtml;
+                        document.getElementById('asks-list').innerHTML = asksHtml;
+                        document.getElementById('total-bids').innerHTML = `<strong>Total: $${formatCurrency(totalBids || w.buy_wall || 0)}</strong>`;
+                        document.getElementById('total-asks').innerHTML = `<strong>Total: $${formatCurrency(totalAsks || w.sell_wall || 0)}</strong>`;
+                        
+                        updateCalculations();
+
+                    } else {
+                        document.getElementById('loading').innerHTML = `<h3 class="text-red">Error: ${data.message}</h3>`;
+                    }
+                })
+                .catch(err => {
+                    if (document.getElementById('loading').style.display !== 'none') {
+                        document.getElementById('loading').innerHTML = `<h3 class="text-red">Failed to load data</h3>`;
+                    }
+                });
+        }
+        
+        fetchLiveAnalysis();
+        setInterval(fetchLiveAnalysis, 5000); // 5 sec live refresh
+    </script>
+</body>
+</html>

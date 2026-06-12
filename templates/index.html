@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XT Crypto Scanner Pro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=14">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <div class="container">
+        <header class="glass-header">
+            <div class="logo">
+                <i class="fa-solid fa-chart-line"></i>
+                <h1>XT Scanner <span>Pro</span></h1>
+            </div>
+            <div class="header-right">
+                <button id="theme-toggle" class="icon-btn" title="Toggle Light/Dark Mode">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+                <div class="status">
+                    <span class="pulse-dot"></span>
+                    <span>Live Data Sync</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="stats-row">
+            <div class="stat-card glass-panel">
+                <h3>Total Coins Tracked</h3>
+                <h2 id="total-coins">0</h2>
+            </div>
+            <div class="stat-card glass-panel">
+                <h3>Top 5m Volume Gainer</h3>
+                <h2 id="top-gainer">-</h2>
+                <p id="top-gainer-vol" class="text-green">0 USDT</p>
+            </div>
+            <div class="stat-card glass-panel">
+                <h3>Latest Alert</h3>
+                <p id="latest-alert" class="text-muted">Waiting for spikes...</p>
+            </div>
+        </div>
+
+        <div class="toolbar glass-panel" style="flex-direction: column; align-items: stretch; gap: 1rem;">
+            <!-- Top Row: Category and Volume -->
+            <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                <div class="filter-group">
+                    <span class="filter-label">Category:</span>
+                    <button class="filter-btn active" data-category="all">All</button>
+                    <button class="filter-btn" data-category="majors">Majors</button>
+                    <button class="filter-btn" data-category="meme">Meme</button>
+                    <button class="filter-btn" data-category="forex">Forex</button>
+                    <button class="filter-btn" data-category="altcoins">Altcoins</button>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">Volume:</span>
+                    <button class="filter-btn active" data-vol="all">All</button>
+                    <button class="filter-btn" data-vol="buy">High Buy Vol <i class="fa-solid fa-arrow-trend-up text-green"></i></button>
+                    <button class="filter-btn" data-vol="sell">High Sell Vol <i class="fa-solid fa-arrow-trend-down text-red"></i></button>
+                </div>
+            </div>
+            
+            <!-- Bottom Row: AI Filters -->
+            <div class="filter-group ai-filters" style="display: flex !important; flex-direction: row !important; flex-wrap: wrap; justify-content: center; width: 100%; gap: 10px; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                <button class="filter-btn active" data-filter="all">All Coins</button>
+                <button class="filter-btn text-purple" data-filter="breakout" style="border-color: #a855f7; color: #a855f7;"><i class="fa-solid fa-rocket"></i> 10x Breakout</button>
+                <button class="filter-btn text-green" data-filter="pump">🔥 PUMP</button>
+                <button class="filter-btn text-red" data-filter="dump">🩸 DUMP</button>
+                <button class="filter-btn text-green" data-filter="up">Bullish 📈</button>
+                <button class="filter-btn text-red" data-filter="down">Bearish 📉</button>
+                <button class="filter-btn text-gray" data-filter="neutral">Neutral ➖</button>
+            </div>
+        </div>
+
+        <main class="glass-panel main-panel">
+            <div class="table-header">
+                <h2>Live Volume Monitor (USDT)</h2>
+                <div class="search-box">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" id="search-input" placeholder="Search coins (e.g. BTC)...">
+                </div>
+                <div class="filters-container mt-3" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="filter-btn active" data-filter="all">All Coins</button>
+                    <button class="filter-btn text-green" data-filter="pump" style="border-color: #22c55e;"><i class="fa-solid fa-fire"></i> PUMP</button>
+                    <button class="filter-btn text-red" data-filter="dump" style="border-color: #ef4444;"><i class="fa-solid fa-droplet"></i> DUMP</button>
+                    <button class="filter-btn" data-filter="up">🚀 Bullish</button>
+                    <button class="filter-btn" data-filter="down">⚠️ Bearish</button>
+                    <button class="filter-btn" data-filter="neutral">⚪ Neutral</button>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table id="crypto-table">
+                    <thead>
+                        <tr>
+                            <th>Coin</th>
+                            <th>Price</th>
+                            <th>AI Prediction 🤖</th>
+                            <th>Order Book Walls</th>
+                            <th>5m Vol (Buy / Sell)</th>
+                            <th>15m Vol (Buy / Sell)</th>
+                            <th>1h Vol (Buy / Sell)</th>
+                            <th>4h Vol (Buy / Sell)</th>
+                            <th>24h Vol (Buy / Sell)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Data will be populated via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}?v=15"></script>
+</body>
+</html>
