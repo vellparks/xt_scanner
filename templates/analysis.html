@@ -372,6 +372,11 @@
                         barsHtml += renderBar('1h Volume', v['1h'].buy, v['1h'].sell);
                         barsHtml += renderBar('4h Volume', v['4h'].buy, v['4h'].sell);
                         barsHtml += renderBar('24h Volume', v['24h'].buy, v['24h'].sell);
+                        if (v.cum) {
+                            barsHtml += '<div style="margin-top: 15px; border-top: 1px dashed var(--glass-border); padding-top: 10px;">';
+                            barsHtml += renderBar('All-Time Tracked Volume', v.cum.buy, v.cum.sell);
+                            barsHtml += '</div>';
+                        }
                         document.getElementById('vol-bars').innerHTML = barsHtml;
                         
                         // Tracker Update
