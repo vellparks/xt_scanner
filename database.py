@@ -33,6 +33,17 @@ def init_db():
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_timestamp ON coin_history(timestamp)')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_symbol ON coin_history(symbol)')
     
+    # Auto-migrate: add cum_buy and cum_sell if missing
+    try:
+        cursor.execute('ALTER TABLE last_snapshot ADD COLUMN cum_buy REAL DEFAULT 0')
+    except sqlite3.OperationalError:
+        pass # Column already exists
+        
+    try:
+        cursor.execute('ALTER TABLE last_snapshot ADD COLUMN cum_sell REAL DEFAULT 0')
+    except sqlite3.OperationalError:
+        pass # Column already exists
+        
     conn.commit()
     conn.close()
 
