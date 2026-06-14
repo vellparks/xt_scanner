@@ -156,22 +156,22 @@ def get_dashboard_data():
     
     results = []
     for row in rows:
-        vol_5m_total = row['buy_vol_5m'] + row['sell_vol_5m']
+        vol_5m_total = (row['buy_vol_5m'] or 0) + (row['sell_vol_5m'] or 0)
         results.append({
             'symbol': row['symbol'].upper().replace('_', '/'),
-            'price': row['current_price'],
-            'buy_vol_5m': row['buy_vol_5m'],
-            'sell_vol_5m': row['sell_vol_5m'],
-            'buy_vol_15m': row['buy_vol_15m'],
-            'sell_vol_15m': row['sell_vol_15m'],
-            'buy_vol_1h': row['buy_vol_1h'],
-            'sell_vol_1h': row['sell_vol_1h'],
-            'buy_vol_4h': row['buy_vol_4h'],
-            'sell_vol_4h': row['sell_vol_4h'],
-            'buy_vol_24h': row['buy_vol_24h'],
-            'sell_vol_24h': row['sell_vol_24h'],
-            'cum_buy': row['cum_buy'],
-            'cum_sell': row['cum_sell'],
+            'price': row['current_price'] or 0,
+            'buy_vol_5m': row['buy_vol_5m'] or 0,
+            'sell_vol_5m': row['sell_vol_5m'] or 0,
+            'buy_vol_15m': row['buy_vol_15m'] or 0,
+            'sell_vol_15m': row['sell_vol_15m'] or 0,
+            'buy_vol_1h': row['buy_vol_1h'] or 0,
+            'sell_vol_1h': row['sell_vol_1h'] or 0,
+            'buy_vol_4h': row['buy_vol_4h'] or 0,
+            'sell_vol_4h': row['sell_vol_4h'] or 0,
+            'buy_vol_24h': row['buy_vol_24h'] or 0,
+            'sell_vol_24h': row['sell_vol_24h'] or 0,
+            'cum_buy': row['cum_buy'] or 0,
+            'cum_sell': row['cum_sell'] or 0,
             'vol_5m_total': vol_5m_total
         })
         
