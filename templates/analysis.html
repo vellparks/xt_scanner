@@ -146,6 +146,21 @@
 
                 <!-- Right: Volume Breakdown & Walls -->
                 <div>
+                    <!-- Tracker -->
+                    <div class="card mb-4" style="margin-bottom: 24px; border-color: var(--accent-color);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="margin: 0; color: var(--accent-color);"><i class="fa-solid fa-stopwatch"></i> Live Tracker</h3>
+                            <button id="reset-tracker" style="background: var(--danger-color); color: white; border: none; padding: 5px 15px; border-radius: 6px; cursor: pointer; font-family: inherit; font-weight: 600;">Reset</button>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">
+                            <span>Elapsed Time:</span>
+                            <strong id="tracker-timer" style="color: var(--text-primary);">00:00:00</strong>
+                        </div>
+                        <div id="tracker-bars">
+                            <div class="text-center text-muted">Waiting for data...</div>
+                        </div>
+                    </div>
+
                     <div class="card mb-4" style="margin-bottom: 24px;">
                         <h3 style="margin-top: 0;"><i class="fa-solid fa-chart-column"></i> Volume Breakdown</h3>
                         <div id="vol-bars"></div>
@@ -210,6 +225,36 @@
         };
 
         let latestSetup = null;
+        
+        // Tracker State
+        let trackerCumBuyOffset = null;
+        let trackerCumSellOffset = null;
+        let trackerStartTime = Date.now();
+        
+        document.getElementById('reset-tracker').addEventListener('click', () => {
+            if (latestSetup && latestSetup.volume && latestSetup.volume.cum) {
+                trackerCumBuyOffset = latestSetup.volume.cum.buy;
+                trackerCumSellOffset = latestSetup.volume.cum.sell;
+                trackerStartTime = Date.now();
+                updateTrackerUI(0, 0);
+            }
+        });
+
+        setInterval(() => {
+            if (!trackerStartTime) return;
+            const elapsedSeconds = Math.floor((Date.now() - trackerStartTime) / 1000);
+            const h = Math.floor(elapsedSeconds / 3600).toString().padStart(2, '0');
+            const m = Math.floor((elapsedSeconds % 3600) / 60).toString().padStart(2, '0');
+            const s = (elapsedSeconds % 60).toString().padStart(2, '0');
+            document.getElementById('tracker-timer').innerText = `${h}:${m}:${s}`;
+        }, 1000);
+        
+        function updateTrackerUI(buyDelta, sellDelta) {
+            document.getElementById('tracker-bars').innerHTML = renderBar('Traded Since Reset', buyDelta, sellDelta);
+            if (buyDelta === 0 && sellDelta === 0) {
+                document.getElementById('tracker-bars').innerHTML = '<div class="text-center text-muted" style="padding: 10px 0;">No trades yet</div>';
+            }
+        }
 
         function updateCalculations() {
             if (!latestSetup) return;
@@ -328,6 +373,16 @@
                         barsHtml += renderBar('4h Volume', v['4h'].buy, v['4h'].sell);
                         barsHtml += renderBar('24h Volume', v['24h'].buy, v['24h'].sell);
                         document.getElementById('vol-bars').innerHTML = barsHtml;
+                        
+                        // Tracker Update
+                        if (v.cum) {
+                            if (trackerCumBuyOffset === null) trackerCumBuyOffset = v.cum.buy;
+                            if (trackerCumSellOffset === null) trackerCumSellOffset = v.cum.sell;
+                            
+                            const buyDelta = Math.max(0, v.cum.buy - trackerCumBuyOffset);
+                            const sellDelta = Math.max(0, v.cum.sell - trackerCumSellOffset);
+                            updateTrackerUI(buyDelta, sellDelta);
+                        }
 
                         // Walls (Top 5)
                         const w = setup.walls;

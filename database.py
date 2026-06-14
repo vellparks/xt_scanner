@@ -23,7 +23,9 @@ def init_db():
         CREATE TABLE IF NOT EXISTS last_snapshot (
             symbol TEXT PRIMARY KEY,
             volume_24h REAL,
-            price REAL
+            price REAL,
+            cum_buy REAL DEFAULT 0,
+            cum_sell REAL DEFAULT 0
         )
     ''')
     
@@ -44,8 +46,8 @@ def insert_snapshots(data):
     cursor = conn.cursor()
     
     # Get last snapshots to calculate 1m volume difference and price diff
-    cursor.execute('SELECT symbol, volume_24h, price FROM last_snapshot')
-    last_vols = {row[0]: {'volume_24h': row[1], 'price': row[2]} for row in cursor.fetchall()}
+    cursor.execute('SELECT symbol, volume_24h, price, cum_buy, cum_sell FROM last_snapshot')
+    last_vols = {row[0]: {'volume_24h': row[1], 'price': row[2], 'cum_buy': row[3] or 0, 'cum_sell': row[4] or 0} for row in cursor.fetchall()}
     
     history_records = []
     snapshot_records = []
@@ -56,9 +58,11 @@ def insert_snapshots(data):
         price = float(item.get('price', 0))
         
         # Calculate 1m volume
-        prev_data = last_vols.get(sym, {'volume_24h': curr_vol, 'price': price})
+        prev_data = last_vols.get(sym, {'volume_24h': curr_vol, 'price': price, 'cum_buy': 0, 'cum_sell': 0})
         prev_vol = prev_data['volume_24h']
         prev_price = prev_data['price']
+        cum_buy = prev_data['cum_buy']
+        cum_sell = prev_data['cum_sell']
         
         vol_1m = max(0, curr_vol - prev_vol)
         
@@ -71,11 +75,13 @@ def insert_snapshots(data):
             
         if price >= prev_price:
             buy_vol = vol_1m
+            cum_buy += vol_1m
         else:
             sell_vol = vol_1m
+            cum_sell += vol_1m
             
         history_records.append((current_time, sym, price, buy_vol, sell_vol))
-        snapshot_records.append((sym, curr_vol, price))
+        snapshot_records.append((sym, curr_vol, price, cum_buy, cum_sell))
         
     cursor.executemany('''
         INSERT OR IGNORE INTO coin_history (timestamp, symbol, price, buy_vol_1m, sell_vol_1m)
@@ -83,8 +89,8 @@ def insert_snapshots(data):
     ''', history_records)
     
     cursor.executemany('''
-        INSERT OR REPLACE INTO last_snapshot (symbol, volume_24h, price)
-        VALUES (?, ?, ?)
+        INSERT OR REPLACE INTO last_snapshot (symbol, volume_24h, price, cum_buy, cum_sell)
+        VALUES (?, ?, ?, ?, ?)
     ''', snapshot_records)
     
     # Cleanup old records (older than 24 hours)
@@ -111,8 +117,10 @@ def get_dashboard_data():
     
     query = f'''
         SELECT 
-            symbol,
+            ch1.symbol,
             (SELECT price FROM coin_history ch2 WHERE ch2.symbol = ch1.symbol ORDER BY timestamp DESC LIMIT 1) as current_price,
+            ls.cum_buy,
+            ls.cum_sell,
             SUM(CASE WHEN timestamp >= {t_5m} THEN buy_vol_1m ELSE 0 END) as buy_vol_5m,
             SUM(CASE WHEN timestamp >= {t_5m} THEN sell_vol_1m ELSE 0 END) as sell_vol_5m,
             
@@ -128,7 +136,8 @@ def get_dashboard_data():
             SUM(CASE WHEN timestamp >= {t_24h} THEN buy_vol_1m ELSE 0 END) as buy_vol_24h,
             SUM(CASE WHEN timestamp >= {t_24h} THEN sell_vol_1m ELSE 0 END) as sell_vol_24h
         FROM coin_history ch1
-        GROUP BY symbol
+        LEFT JOIN last_snapshot ls ON ch1.symbol = ls.symbol
+        GROUP BY ch1.symbol
     '''
     
     cursor.execute(query)
@@ -150,6 +159,8 @@ def get_dashboard_data():
             'sell_vol_4h': row['sell_vol_4h'],
             'buy_vol_24h': row['buy_vol_24h'],
             'sell_vol_24h': row['sell_vol_24h'],
+            'cum_buy': row['cum_buy'],
+            'cum_sell': row['cum_sell'],
             'vol_5m_total': vol_5m_total
         })
         

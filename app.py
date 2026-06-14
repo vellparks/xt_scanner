@@ -444,7 +444,8 @@ def api_analysis():
             '15m': {'buy': b_15m, 'sell': s_15m},
             '1h': {'buy': b_1h, 'sell': s_1h},
             '4h': {'buy': coin.get('buy_vol_4h', 0), 'sell': coin.get('sell_vol_4h', 0)},
-            '24h': {'buy': coin.get('buy_vol_24h', 0), 'sell': coin.get('sell_vol_24h', 0)}
+            '24h': {'buy': coin.get('buy_vol_24h', 0), 'sell': coin.get('sell_vol_24h', 0)},
+            'cum': {'buy': coin.get('cum_buy', 0), 'sell': coin.get('cum_sell', 0)}
         },
         'walls': {
             'buy_wall': bw,
